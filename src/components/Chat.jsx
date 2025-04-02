@@ -1,65 +1,86 @@
-// src/components/Chat.js
-import React, { useState, useRef, useEffect } from 'react';
-import styled from 'styled-components';
+import React, { useState, useEffect, useRef } from "react";
+import styled from "styled-components";
 
-const Chat = ({ messages, sendMessage, username }) => {
-  const [message, setMessage] = useState('');
-  const messagesEndRef = useRef(null);
-  
+const WEBSOCKET_URL = "ws://127.0.0.1:8000/ws/signaling/test/"; // Update this to match your backend
+
+const Chat = ({ username }) => {
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState("");
+  const socketRef = useRef(null);
+
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-  
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    connectWebSocket();
+  }, []);
+
+  const connectWebSocket = () => {
+    socketRef.current = new WebSocket(WEBSOCKET_URL);
+
+    socketRef.current.onopen = () => {
+      console.log("✅ WebSocket connected!");
+    };
+
+    socketRef.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "chat_message") {
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { sender: data.sender, message: data.message, timestamp: new Date().toISOString() },
+        ]);
+      }
+    };
+
+    socketRef.current.onclose = (event) => {
+      console.warn(`⚠️ WebSocket disconnected! Code: ${event.code}`);
+      if (event.code !== 1000) {
+        setTimeout(connectWebSocket, 3000); // Reconnect after 3 seconds
+      }
+    };
   };
-  
-  const handleSubmit = (e) => {
+
+  const sendMessage = (e) => {
     e.preventDefault();
     if (!message.trim()) return;
-    
-    sendMessage(message);
-    setMessage('');
+
+    const messageData = JSON.stringify({ type: "chat_message", message, sender: username });
+
+    socketRef.current.send(messageData);
+    setMessages((prev) => [...prev, { sender: "You", message, timestamp: new Date().toISOString() }]);
+    setMessage("");
+
+      
   };
-  
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
-  
+
   return (
     <Container>
       <Header>
         <Title>Chat</Title>
       </Header>
-      
+
       <MessagesContainer>
-        {messages?.map((msg, index) => (
-          <Message key={index} $isMe={msg.sender === username || msg.isMe}>
-            <Sender>{msg.sender === username || msg.isMe ? 'You' : msg.sender}</Sender>
+        {messages.map((msg, index) => (
+          <Message key={index} $isMe={msg.sender === "You"}>
+            <Sender>{msg.sender === "You" ? "You" : msg.sender}</Sender>
             <Content>{msg.message}</Content>
-            <Time>{formatTime(msg.timestamp)}</Time>
+                 <Time>{formatTime(msg.timestamp)}</Time>
           </Message>
         ))}
-        <div ref={messagesEndRef} />
       </MessagesContainer>
-      
-      <InputContainer onSubmit={handleSubmit}>
-        <Input
-          type="text"
-          placeholder="Type a message..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
-        <SendButton type="submit" disabled={!message.trim()}>
-          Send
-        </SendButton>
+
+      <InputContainer onSubmit={sendMessage}>
+        <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Type a message..." />
+        <SendButton type="submit">Send</SendButton>
       </InputContainer>
     </Container>
   );
 };
 
 export default Chat;
+
 
 
 const Container = styled.div`
@@ -93,18 +114,20 @@ const Message = styled.div`
   border-radius: 8px;
   max-width: 80%;
   word-break: break-word;
-  
-  ${({ $isMe }) => $isMe ? `
+
+  ${({ $isMe }) =>
+    $isMe
+      ? `
     align-self: flex-end;
     background-color: #0B93F6;
     color: white;
-  ` : `
+  `
+      : `
     align-self: flex-start;
     background-color: #444;
     color: white;
   `}
 `;
-
 
 const Sender = styled.div`
   font-size: 0.8rem;
@@ -135,7 +158,7 @@ const Input = styled.input`
   border-radius: 4px;
   background-color: #444;
   color: white;
-  
+
   &:focus {
     outline: none;
   }
@@ -149,11 +172,11 @@ const SendButton = styled.button`
   border-radius: 4px;
   padding: 0 1rem;
   cursor: pointer;
-  
+
   &:hover {
     background-color: #3367d6;
   }
-  
+
   &:disabled {
     background-color: #666;
     cursor: not-allowed;
