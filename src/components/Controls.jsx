@@ -1,4 +1,3 @@
-// src/components/Controls.js
 import React from 'react';
 import styled from 'styled-components';
 

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import { SocketContext } from '../context/SocketContext';
 import Video from './Video';
@@ -7,60 +7,104 @@ import Chat from './Chat';
 
 const VideoRoom = ({ match }) => {
   const {
-    username,
+    name,
     stream,
     myVideo,
     peers,
-    messages,
+    chatMessages,
     sendMessage,
     joinRoom,
     isAudioEnabled,
     isVideoEnabled,
     toggleAudio,
     toggleVideo,
-    leaveCall
+    leaveCall,
+    roomId,
+    roomCreated,
+    copyRoomId,
+    participants 
   } = useContext(SocketContext);
   
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [copySuccess, setCopySuccess] = useState('');
   const roomIdFromUrl = match?.params?.roomId || '';
   
+  const localVideoRef = useRef();
+  
   useEffect(() => {
-    if (roomIdFromUrl && username) {
-      joinRoom(roomIdFromUrl, username);
+    if (localVideoRef.current) {
+      myVideo.current = localVideoRef.current;
     }
-  }, [roomIdFromUrl, username, joinRoom]);
+  }, [localVideoRef, myVideo]);
+  
+  useEffect(() => {
+    if (stream && localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
+  }, [stream]);
+  
+  useEffect(() => {
+    if (roomIdFromUrl && name) {
+      joinRoom(name, roomIdFromUrl);
+    }
+  }, [roomIdFromUrl, name, joinRoom]);
+  
+  useEffect(() => {
+    if (roomCreated && roomId) {
+      handleCopyRoomId();
+    }
+  }, [roomCreated, roomId]);
+  
+  const handleCopyRoomId = () => {
+    copyRoomId();
+    setCopySuccess('Room ID copied to clipboard!');
+    setTimeout(() => setCopySuccess(''), 3000);
+  };
   
   const toggleChat = () => setIsChatOpen(!isChatOpen);
   
+const participantCount = participants.length > 0 ? participants.length : (peers.length + 1);
+  
   return (
     <RoomContainer>
+      <RoomInfoBar>
+        <RoomInfo>
+          <h3>Room: {roomId}</h3>
+          <CopyButton onClick={handleCopyRoomId}>
+            {copySuccess || 'Copy Room ID'}
+          </CopyButton>
+        </RoomInfo>
+       <ParticipantCount>
+        {participantCount} {participantCount === 1 ? 'Participant' : 'Participants'}
+      </ParticipantCount>
+
+      </RoomInfoBar>
+      
       <MainContent>
         <VideoGrid>
           {stream && (
             <VideoContainer>
               <Video
-                ref={myVideo}
-                name={`${username} (You)`}
-                muted
+                ref={localVideoRef}
+                muted={true}
+                name={name + " (You)"}
                 isVideoDisabled={!isVideoEnabled}
                 isAudioDisabled={!isAudioEnabled}
               />
             </VideoContainer>
           )}
-          {Object.entries(peers).map(([userId, userData]) => (
-            <VideoContainer key={userId}>
+          {peers.map(({ peerId, peerName, stream }) => (
+            <VideoContainer key={peerId}>
               <Video
                 ref={(instance) => {
-                  if (instance && userData.peer && !instance.srcObject) {
-                    userData.peer.on('stream', (peerStream) => {
-                      instance.srcObject = peerStream;
-                    });
+                  if (instance) {
+                    instance.srcObject = stream;
                   }
                 }}
-                name={userData.username}
+                name={peerName}
                 muted={false}
-                isVideoDisabled={!userData.hasVideo}
-                isAudioDisabled={!userData.hasAudio}
+                isVideoDisabled={false}
+                isAudioDisabled={false}
               />
             </VideoContainer>
           ))}
@@ -73,9 +117,11 @@ const VideoRoom = ({ match }) => {
           leaveCall={leaveCall}
         />
       </MainContent>
+      
       <ChatPanel $isOpen={isChatOpen}>
-        <Chat messages={messages} sendMessage={sendMessage} username={username} />
+        <Chat messages={chatMessages} sendMessage={sendMessage} />
       </ChatPanel>
+      
       <ChatToggle $isOpen={isChatOpen} onClick={toggleChat}>
         {isChatOpen ? 'Hide Chat' : 'Show Chat'}
       </ChatToggle>
@@ -87,8 +133,49 @@ export default VideoRoom;
 
 const RoomContainer = styled.div`
   display: flex;
+  flex-direction: column;
   height: 100vh;
   position: relative;
+`;
+
+const RoomInfoBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #262626;
+  padding: 0.5rem 1rem;
+  color: white;
+`;
+
+const RoomInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+`;
+
+const CopyButton = styled.button`
+  background-color: #4285f4;
+  border: none;
+  color: white;
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background-color: #3367d6;
+  }
+`;
+
+const ParticipantCount = styled.div`
+  font-size: 0.9rem;
+  color: #e0e0e0;
 `;
 
 const MainContent = styled.div`
@@ -120,14 +207,11 @@ const ChatPanel = styled.div.attrs(() => ({ role: 'complementary' }))`
   display: ${({ $isOpen }) => ($isOpen ? 'flex' : 'none')};
   flex-direction: column;
   transition: width 0.3s ease;
-
-  @media (max-width: 768px) {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 10;
-  }
+  position: absolute;
+  right: 0;
+  top: 2.5rem; 
+  bottom: 0;
+  z-index: 10;
 `;
 
 const ChatToggle = styled.button.attrs(() => ({ type: 'button' }))`
@@ -141,7 +225,6 @@ const ChatToggle = styled.button.attrs(() => ({ type: 'button' }))`
   color: white;
   cursor: pointer;
   z-index: 20;
-
   @media (max-width: 768px) {
     bottom: 80px;
     right: ${({ $isOpen }) => ($isOpen ? '310px' : '10px')};

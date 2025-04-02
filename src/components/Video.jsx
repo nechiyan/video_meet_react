@@ -1,4 +1,3 @@
-// src/components/Video.js
 import React, { forwardRef } from 'react';
 import styled from 'styled-components';
 

@@ -1,12 +1,10 @@
-// src/components/VideoGrid.js
 import React from 'react';
 import styled from 'styled-components';
 import Video from './Video';
 
 
 const VideoGrid = ({ myStream, myVideo, myName, peers, isVideoEnabled, isAudioEnabled }) => {
-  // Determine grid layout based on number of participants
-  const totalParticipants = peers.length + 1; // +1 for self
+  const totalParticipants = peers.length + 1; 
   
   return (
     <Grid>

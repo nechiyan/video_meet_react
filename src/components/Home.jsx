@@ -1,4 +1,3 @@
-// src/components/Home.js
 import React, { useState, useContext } from 'react';
 import { SocketContext } from '../context/SocketContext';
 import styled from 'styled-components';
@@ -39,7 +38,6 @@ const Home = () => {
         alert('Failed to create room. Please try again.');
       }
     } else {
-      // Join existing room
       if (!roomId) {
         alert('Please enter a room ID');
         return;

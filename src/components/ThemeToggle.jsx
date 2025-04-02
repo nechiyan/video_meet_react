@@ -1,4 +1,3 @@
-// src/components/ThemeToggle.js
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
@@ -8,7 +7,6 @@ const ThemeToggle = () => {
   const [isDark, setIsDark] = useState(false);
   
   useEffect(() => {
-    // Check for saved theme preference or use device preference
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
@@ -20,7 +18,6 @@ const ThemeToggle = () => {
   }, []);
   
   useEffect(() => {
-    // Apply theme to document
     if (isDark) {
       document.documentElement.setAttribute('data-theme', 'dark');
       localStorage.setItem('theme', 'dark');
