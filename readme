@@ -1,0 +1,56 @@
+# Video Calling Application
+
+A real-time video calling application built with Django REST Framework, WebSocket, and React that allows users to create and join video conference rooms.
+
+## Features
+
+- Create or join video conference rooms with a unique identifier
+- Real-time video and audio streaming using WebRTC
+- Text chat alongside video calls
+- Mute/unmute audio and enable/disable video
+- Responsive design with dark mode support
+- Multi-user support with grid layout (bonus feature)
+
+## Technology Stack
+
+### Backend
+- Django 4.2.7
+- Django REST Framework 3.14.0
+- Django Channels 4.0.0 (for WebSocket)
+- Redis (for Channels layer)
+
+### Frontend
+- React 18
+- React Router
+- simple-peer (WebRTC)
+- styled-components
+
+## Setup Instructions
+
+### Prerequisites
+- Python 3.8+
+- Node.js 16+
+- Redis Server (for WebSocket)
+
+### Backend Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/video-calling-app.git
+cd video-calling-app
+```
+
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install the required packages:
+```bash
+pip install -r requirements.txt
+```
+
+4. Navigate to the Django project directory:
+```bash
+cd videocall_project
