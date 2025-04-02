@@ -1,51 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useContext } from "react";
 import styled from "styled-components";
+import { SocketContext } from "../context/SocketContext";
 
-const WEBSOCKET_URL = "ws://127.0.0.1:8000/ws/signaling/test/"; // Update this to match your backend
-
-const Chat = ({ username }) => {
-  const [messages, setMessages] = useState([]);
+const Chat = () => {
+  const { name, chatMessages, sendMessage } = useContext(SocketContext);
   const [message, setMessage] = useState("");
-  const socketRef = useRef(null);
 
-  useEffect(() => {
-    connectWebSocket();
-  }, []);
-
-  const connectWebSocket = () => {
-    socketRef.current = new WebSocket(WEBSOCKET_URL);
-
-    socketRef.current.onopen = () => {
-      console.log("✅ WebSocket connected!");
-    };
-
-    socketRef.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === "chat_message") {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { sender: data.sender, message: data.message, timestamp: new Date().toISOString() },
-        ]);
-      }
-    };
-
-    socketRef.current.onclose = (event) => {
-      console.warn(`⚠️ WebSocket disconnected! Code: ${event.code}`);
-      if (event.code !== 1000) {
-        setTimeout(connectWebSocket, 3000); // Reconnect after 3 seconds
-      }
-    };
-  };
-
-  const sendMessage = (e) => {
+  const handleSendMessage = (e) => {
     e.preventDefault();
     if (!message.trim()) return;
-
-    const messageData = JSON.stringify({ type: "chat_message", message, sender: username });
-
-    socketRef.current.send(messageData);
-    setMessages((prev) => [...prev, { sender: "You", message, timestamp: new Date().toISOString() }]);
+    sendMessage(message);
     setMessage("");
 
       
@@ -57,22 +21,21 @@ const Chat = ({ username }) => {
 
   return (
     <Container>
-      <Header>
-        <Title>Chat</Title>
-      </Header>
-
       <MessagesContainer>
-        {messages.map((msg, index) => (
-          <Message key={index} $isMe={msg.sender === "You"}>
-            <Sender>{msg.sender === "You" ? "You" : msg.sender}</Sender>
+        {chatMessages.map((msg, index) => (
+          <Message key={index} $isMe={msg.sender === name}>
+            <Sender>{msg.sender === name ? "You" : msg.sender}</Sender>
             <Content>{msg.message}</Content>
-                 <Time>{formatTime(msg.timestamp)}</Time>
           </Message>
         ))}
       </MessagesContainer>
 
-      <InputContainer onSubmit={sendMessage}>
-        <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Type a message..." />
+      <InputContainer onSubmit={handleSendMessage}>
+        <Input
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Type a message..."
+        />
         <SendButton type="submit">Send</SendButton>
       </InputContainer>
     </Container>
@@ -81,28 +44,15 @@ const Chat = ({ username }) => {
 
 export default Chat;
 
-
-
+// Styled Components
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
 `;
 
-const Header = styled.div`
-  padding: 1rem;
-  background-color: #333;
-  border-bottom: 1px solid #444;
-`;
-
-const Title = styled.h3`
-  margin: 0;
-  font-size: 1.2rem;
-`;
-
 const MessagesContainer = styled.div`
   flex: 1;
-  padding: 1rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -114,19 +64,9 @@ const Message = styled.div`
   border-radius: 8px;
   max-width: 80%;
   word-break: break-word;
-
-  ${({ $isMe }) =>
-    $isMe
-      ? `
-    align-self: flex-end;
-    background-color: #0B93F6;
-    color: white;
-  `
-      : `
-    align-self: flex-start;
-    background-color: #444;
-    color: white;
-  `}
+  align-self: ${({ $isMe }) => ($isMe ? "flex-end" : "flex-start")};
+  background-color: ${({ $isMe }) => ($isMe ? "#0B93F6" : "#444")};
+  color: white;
 `;
 
 const Sender = styled.div`
@@ -136,13 +76,6 @@ const Sender = styled.div`
 `;
 
 const Content = styled.div``;
-
-const Time = styled.div`
-  font-size: 0.7rem;
-  text-align: right;
-  margin-top: 0.25rem;
-  opacity: 0.8;
-`;
 
 const InputContainer = styled.form`
   display: flex;
