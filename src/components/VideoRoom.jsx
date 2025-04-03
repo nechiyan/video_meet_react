@@ -61,71 +61,67 @@ const VideoRoom = ({ match }) => {
     setTimeout(() => setCopySuccess(''), 3000);
   };
   
-  const toggleChat = () => setIsChatOpen(!isChatOpen);
   
 const participantCount = participants.length > 0 ? participants.length : (peers.length + 1);
   
   return (
     <RoomContainer>
-      <RoomInfoBar>
-        <RoomInfo>
-          <h3>Room: {roomId}</h3>
-          <CopyButton onClick={handleCopyRoomId}>
-            {copySuccess || 'Copy Room ID'}
-          </CopyButton>
-        </RoomInfo>
-       <ParticipantCount>
+  <VideoAndControlsContainer>
+    <RoomInfoBar>
+      <RoomInfo>
+        <h3>Room: {roomId}</h3>
+        <CopyButton onClick={handleCopyRoomId}>
+          {copySuccess || 'Copy Room ID'}
+        </CopyButton>
+      </RoomInfo>
+      <ParticipantCount>
         {participantCount} {participantCount === 1 ? 'Participant' : 'Participants'}
       </ParticipantCount>
+    </RoomInfoBar>
 
-      </RoomInfoBar>
-      
-      <MainContent>
-        <VideoGrid>
-          {stream && (
-            <VideoContainer>
-              <Video
-                ref={localVideoRef}
-                muted={true}
-                name={name + " (You)"}
-                isVideoDisabled={!isVideoEnabled}
-                isAudioDisabled={!isAudioEnabled}
-              />
-            </VideoContainer>
-          )}
-          {peers.map(({ peerId, peerName, stream }) => (
-            <VideoContainer key={peerId}>
-              <Video
-                ref={(instance) => {
-                  if (instance) {
-                    instance.srcObject = stream;
-                  }
-                }}
-                name={peerName}
-                muted={false}
-                isVideoDisabled={false}
-                isAudioDisabled={false}
-              />
-            </VideoContainer>
-          ))}
-        </VideoGrid>
-        <Controls
-          isAudioEnabled={isAudioEnabled}
-          isVideoEnabled={isVideoEnabled}
-          toggleAudio={toggleAudio}
-          toggleVideo={toggleVideo}
-          leaveCall={leaveCall}
-        />
-      </MainContent>
-      
-      <ChatPanel $isOpen={isChatOpen}>
-        <Chat messages={chatMessages} sendMessage={sendMessage} />
-      </ChatPanel>
-      
-      <ChatToggle $isOpen={isChatOpen} onClick={toggleChat}>
-        {isChatOpen ? 'Hide Chat' : 'Show Chat'}
-      </ChatToggle>
-    </RoomContainer>
+    <VideoGrid>
+      {stream && (
+        <VideoContainer>
+          <Video
+            ref={localVideoRef}
+            muted={true}
+            name={name + " (You)"}
+            isVideoDisabled={!isVideoEnabled}
+            isAudioDisabled={!isAudioEnabled}
+          />
+        </VideoContainer>
+      )}
+      {peers.map(({ peerId, peerName, stream }) => (
+        <VideoContainer key={peerId}>
+          <Video
+            ref={(instance) => {
+              if (instance) {
+                instance.srcObject = stream;
+              }
+            }}
+            name={peerName}
+            muted={false}
+            isVideoDisabled={false}
+            isAudioDisabled={false}
+          />
+        </VideoContainer>
+      ))}
+    </VideoGrid>
+
+    <Controls
+      isAudioEnabled={isAudioEnabled}
+      isVideoEnabled={isVideoEnabled}
+      toggleAudio={toggleAudio}
+      toggleVideo={toggleVideo}
+      leaveCall={leaveCall}
+    />
+  </VideoAndControlsContainer>
+
+  <ChatContainer>
+    <Chat messages={chatMessages} sendMessage={sendMessage} />
+  </ChatContainer>
+</RoomContainer>
+
   );
 };
 
@@ -133,10 +129,41 @@ export default VideoRoom;
 
 const RoomContainer = styled.div`
   display: flex;
-  flex-direction: column;
   height: 100vh;
-  position: relative;
+  width: 100%;
 `;
+
+const VideoAndControlsContainer = styled.div`
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: #1a1a1a;
+`;
+
+const VideoGrid = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
+`;
+
+const ChatContainer = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #222;
+  color: white;
+  padding: 15px;
+  border-left: 2px solid #444;
+  overflow-y: auto;
+  max-width: 350px;
+`;
+
+
 
 const RoomInfoBar = styled.div`
   display: flex;
@@ -184,16 +211,6 @@ const MainContent = styled.div`
   flex-direction: column;
 `;
 
-const VideoGrid = styled.div`
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  grid-auto-rows: 1fr;
-  gap: 1rem;
-  padding: 1rem;
-  background-color: #1a1a1a;
-  overflow: auto;
-`;
 
 const VideoContainer = styled.div`
   display: flex;

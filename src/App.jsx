@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, createContext } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { SocketContextProvider } from './context/SocketContext';
 import Home from './components/Home';
 import VideoRoom from './components/VideoRoom';
 import { createGlobalStyle } from 'styled-components';
+
+export const DarkModeContext = createContext();
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -14,20 +16,30 @@ const GlobalStyle = createGlobalStyle`
   }
   
   body {
-    background-color: #f5f5f5;
+    background-color: ${(props) => (props.darkMode ? '#121212' : '#f5f5f5')};
+    color: ${(props) => (props.darkMode ? '#ffffff' : '#000000')};
+    transition: background-color 0.3s, color 0.2s;
   }
 `;
 
 function App() {
+  const [darkMode, setDarkMode] = useState(false);
+
+  const toggleDarkMode = () => {
+    setDarkMode((prevMode) => !prevMode);
+  };
+
   return (
     <Router>
-      <GlobalStyle />
-      <SocketContextProvider>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/room/:roomId" element={<VideoRoom />} />
-        </Routes>
-      </SocketContextProvider>
+      <DarkModeContext.Provider value={{ darkMode, toggleDarkMode }}>
+        <GlobalStyle darkMode={darkMode} />
+        <SocketContextProvider>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/room/:roomId" element={<VideoRoom />} />
+          </Routes>
+        </SocketContextProvider>
+      </DarkModeContext.Provider>
     </Router>
   );
 }

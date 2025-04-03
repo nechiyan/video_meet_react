@@ -1,9 +1,13 @@
 import React, { useState, useContext } from 'react';
 import { SocketContext } from '../context/SocketContext';
+import { DarkModeContext } from '../App';
 import styled from 'styled-components';
+import { Sun, Moon } from 'lucide-react';
 
 const Home = () => {
   const { joinRoom } = useContext(SocketContext);
+  const { darkMode, toggleDarkMode } = useContext(DarkModeContext);
+
   const [name, setName] = useState('');
   const [roomId, setRoomId] = useState('');
   const [isCreating, setIsCreating] = useState(true);
@@ -17,7 +21,6 @@ const Home = () => {
     }
     
     if (isCreating) {
-      // Create a new room
       try {
         const response = await fetch('http://localhost:8000/api/v1/rooms/', {
           method: 'POST',
@@ -59,19 +62,25 @@ const Home = () => {
   };
 
   return (
-    <Container>
-      <Card>
-        <Title>Video Meet App</Title>
+    <Container darkMode={darkMode}>
+         <DarkModeButton onClick={toggleDarkMode} darkMode={darkMode}>
+          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </DarkModeButton>
+      <Card darkMode={darkMode}>
+        
+        <Title darkMode={darkMode}>Video Meet App</Title>
         <ToggleContainer>
           <ToggleButton 
             active={isCreating} 
             onClick={() => setIsCreating(true)}
+            darkMode={darkMode}
           >
             Create Room
           </ToggleButton>
           <ToggleButton 
             active={!isCreating} 
             onClick={() => setIsCreating(false)}
+            darkMode={darkMode}
           >
             Join Room
           </ToggleButton>
@@ -84,6 +93,7 @@ const Home = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+            darkMode={darkMode}
           />
           
           {!isCreating && (
@@ -93,14 +103,17 @@ const Home = () => {
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
               required
+              darkMode={darkMode}
             />
           )}
           
-          <Button type="submit">
+          <Button darkMode={darkMode} type="submit">
             {isCreating ? 'Create & Join' : 'Join Room'}
           </Button>
         </Form>
       </Card>
+     
+
     </Container>
   );
 };
@@ -108,16 +121,18 @@ const Home = () => {
 export default Home;
 
 const Container = styled.div`
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: ${(props) => (props.darkMode ? '#121212' : '#f5f5f5')};
 `;
 
+
 const Card = styled.div`
-  background: white;
+  background: ${(props) => (props.darkMode ? '#333' : 'white')};
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -126,7 +141,7 @@ const Card = styled.div`
 `;
 
 const Title = styled.h1`
-  color: #333;
+  color: ${(props) => (props.darkMode ? '#fff' : '#333')};
   text-align: center;
   margin-bottom: 2rem;
 `;
@@ -142,12 +157,14 @@ const Input = styled.input`
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
+  background-color: ${(props) => (props.darkMode ? '#444' : '#fff')};
+  color: ${(props) => (props.darkMode ? '#fff' : '#000')};
 `;
 
 const Button = styled.button`
   padding: 0.75rem;
-  background-color: #4285f4;
-  color: white;
+  background-color: ${(props) => (props.darkMode ? '#666' : '#4285f4')};
+  color: ${(props) => (props.darkMode ? '#fff' : 'white')};
   border: none;
   border-radius: 4px;
   font-size: 1rem;
@@ -155,7 +172,7 @@ const Button = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #3367d6;
+    background-color: ${(props) => (props.darkMode ? '#555' : '#3367d6')};
   }
 `;
 
@@ -167,10 +184,30 @@ const ToggleContainer = styled.div`
 `;
 
 const ToggleButton = styled.button`
-  background: ${props => props.active ? '#4285f4' : '#f5f5f5'};
-  color: ${props => props.active ? 'white' : '#333'};
+  background: ${(props) => (props.active ? '#4285f4' : '#f5f5f5')};
+  color: ${(props) => (props.active ? 'white' : '#333')};
   border: 1px solid #ddd;
   padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
+`;
+const DarkModeButton = styled.button`
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-radius: 50%;
+  transition: all 0.3s ease-in-out;
+  &:hover {
+    background: ${(props) => (props.darkMode ? '#444' : '#ddd')};
+  }
+  svg {
+    color: ${(props) => (props.darkMode ? '#FFff' : '#333')};
+  }
 `;
