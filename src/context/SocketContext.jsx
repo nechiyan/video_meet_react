@@ -19,10 +19,7 @@ const SocketContextProvider = ({ children }) => {
   const peersRef = useRef([]);
   const navigate = useNavigate();
   const clientId = useRef(Math.random().toString(36).substr(2, 9)); 
-  const ws = new WebSocket("ws://localhost:8000/ws/signaling/test/");
-  ws.onopen = () => console.log("✅ WebSocket connected");
-  ws.onerror = (error) => console.error("❌ WebSocket error:", error);
-  ws.onclose = () => console.warn("⚠️ WebSocket closed");
+
   
   useEffect(() => {
     const getMediaStream = async () => {
@@ -51,16 +48,13 @@ const SocketContextProvider = ({ children }) => {
     setName(userName);
     setRoomId(room);
     if (!socketRef.current) {
-      console.log(`Attempting to connect to WebSocket for room: ${room}`);
       socketRef.current = new WebSocket(`ws://localhost:8000/ws/signaling/${room}/`);
       socketRef.current.onopen = () => {
-        console.log("✅ WebSocket connection established");
         socketRef.current.send(JSON.stringify({ type: 'join', name: userName, clientId: clientId.current }));
         setRoomCreated(true);
       };
       socketRef.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log("📩 Received WebSocket Message:", data);
         switch (data.type) {
           case 'room_users':
             initializeConnections(data.users);
@@ -84,22 +78,19 @@ const SocketContextProvider = ({ children }) => {
             handleChatMessage(data);
             break;
           default:
-            console.log('⚠️ Unknown message type:', data.type);
         }
       };
       socketRef.current.onerror = (error) => {
-        console.error("❌ WebSocket error:", error);
+        console.error("WebSocket error:", error);
         setRoomCreated(false);
       };
       socketRef.current.onclose = () => {
-        console.warn("⚠️ WebSocket connection closed. Retrying in 3 seconds...");
         socketRef.current = null;
         setTimeout(() => {
           joinRoom(userName, room); 
         }, 3000);
       };
     } else {
-      console.log("ℹ️ WebSocket already exists, skipping new connection.");
       setRoomCreated(true);
     }
     navigate(`/room/${room}`);
@@ -195,7 +186,6 @@ const sendMessage = (message) => {
     return;
   }
   if (socketRef.current.readyState === WebSocket.CONNECTING) {
-    console.log("⏳ WebSocket is still connecting. Retrying in 1 second...");
     setTimeout(() => sendMessage(message), 1000);
     return;
   }
@@ -208,7 +198,7 @@ const sendMessage = (message) => {
       { sender: name, message, timestamp, isMe: true }
     ]);
   } else {
-    console.error("❌ WebSocket is not open. Current state:", socketRef.current.readyState);
+    console.error("WebSocket is not open. Current state:", socketRef.current.readyState);
   }
 };
 
